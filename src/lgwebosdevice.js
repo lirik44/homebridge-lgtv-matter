@@ -86,6 +86,9 @@ class LgWebOsDevice extends EventEmitter {
         this.soundMode = '';
         this.soundOutput = '';
         this.isBooting = false;
+        this.screenOff = false;
+        this.screenSaver = false;
+        this.activeStandby = false;
 
         //picture mode variable
         for (const mode of this.pictureModes) {
@@ -1653,7 +1656,6 @@ class LgWebOsDevice extends EventEmitter {
                     this.soundOutput = soundOutput;
                     if (this.logInfo) this.emit('info', `Sound Output: ${SoundOutputs[soundOutput] ?? 'Unknown'}`);
                 })
-                // fix #12: event name unified to 'mediaInfo' (was 'mediainfo' in socket, never matched handler)
                 .on('mediaInfo', async (appId, playState, appType, power) => {
                     const input = this.inputsServices?.find(input => input.reference === appId) ?? false;
                     const inputName = input ? input.name : appId;
@@ -1769,7 +1771,7 @@ class LgWebOsDevice extends EventEmitter {
 
             //prepare accessory
             const pairingKey = await this.functions.readData(this.keyFile);
-            const key = pairingKey.length > 10 ? pairingKey.toString() : '0';
+            const key = (pairingKey ?? '').length > 10 ? pairingKey.toString() : '0';
 
             if (key !== '0') {
                 await this.prepareDataForAccessory();

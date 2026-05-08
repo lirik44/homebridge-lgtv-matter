@@ -223,8 +223,8 @@ class LgWebOsSocket extends EventEmitter {
                     category: 'picture',
                     keys: ['pictureMode']
                 };
-                //this.pictureModeId = await this.getCid();
-                //await this.send('alert', ApiUrls.GetSystemSettings, payload, this.pictureModeId);
+                this.pictureModeId = await this.getCid();
+                await this.send('subscribe', ApiUrls.GetSystemSettings, payload, this.pictureModeId);
             }
 
             //sound mode
@@ -321,7 +321,7 @@ class LgWebOsSocket extends EventEmitter {
             if (this.logDebug) this.emit('debug', `Connect to TV`);
 
             const pairingKey = await this.functions.readData(this.keyFile);
-            this.pairingKey = pairingKey.length > 10 ? pairingKey.toString() : '0';
+            this.pairingKey = (pairingKey ?? '').length > 10 ? pairingKey.toString() : '0';
 
             const url = this.sslWebSocket ? ApiUrls.WssUrl.replace('lgwebostv', this.host) : ApiUrls.WsUrl.replace('lgwebostv', this.host);
             const options = this.sslWebSocket ? { rejectUnauthorized: false } : {};
@@ -335,7 +335,7 @@ class LgWebOsSocket extends EventEmitter {
                     this.cleanupSocket();
                 })
                 .on('open', async () => {
-                    if (this.logDebug) this.emit('debug', `Plugin received heartbeat from TV`);
+                    if (this.logDebug) this.emit('debug', `Socket connected to TV`);
                     if (this.socketConnected) return;
 
                     this.socket = socket;

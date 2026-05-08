@@ -15,6 +15,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - For plugin < v4.1.0 use Homebridge UI <= v5.5.0
 - For plugin >= v4.1.0 use Homebridge UI >= v5.13.0
 
+## [4.3.6] - (08.05.2026)
+
+## Changes
+
+- fix alert close on webOS >= 4.0
+- fix picture mode subscription
+- fix external integrations start order
+- fix sensor modes 7/8/9
+- fix RESTFul debug log
+- fix pairing key null read
+- fix typos in display labels
+
 ## [4.3.0] - (25.04.2026)
 
 ## Changes
