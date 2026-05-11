@@ -152,12 +152,13 @@ class LgWebOsDevice extends EventEmitter {
                     cid = await this.lgWebOsSocket.getCid('App');
                     set = await this.lgWebOsSocket.send('request', ApiUrls.LaunchApp, { id: value }, cid);
                     break;
-                case 'Volume':
+                case 'Volume': {
                     const volume = (value < 0 || value > 100) ? this.volume : value;
                     payload = { volume };
                     cid = await this.lgWebOsSocket.getCid('Audio');
                     set = await this.lgWebOsSocket.send('request', ApiUrls.SetVolume, payload, cid);
                     break;
+                }
                 case 'Mute':
                     payload = { mute: value };
                     cid = await this.lgWebOsSocket.getCid('Audio');
@@ -1497,7 +1498,6 @@ class LgWebOsDevice extends EventEmitter {
                 })
                 .on('powerState', (power, screenState) => {
                     this.televisionService?.updateCharacteristic(Characteristic.Active, power);
-                    this.sensorPowerService?.updateCharacteristic(Characteristic.ContactSensorState, power);
 
                     for (let i = 0; i < this.buttons.length; i++) {
                         const button = this.buttons[i];
@@ -1660,8 +1660,6 @@ class LgWebOsDevice extends EventEmitter {
                     const input = this.inputsServices?.find(input => input.reference === appId) ?? false;
                     const inputName = input ? input.name : appId;
 
-                    this.sensorPlayStateService?.updateCharacteristic(Characteristic.ContactSensorState, playState);
-
                     this.playState = playState; // fix #10: was plyState
                     if (this.logInfo) this.emit('info', `Input Name: ${inputName}, state: ${this.playState ? 'Playing' : 'Paused'}`);
                 })
@@ -1781,7 +1779,7 @@ class LgWebOsDevice extends EventEmitter {
                 return new Promise((resolve) => {
                     const intervalId = setInterval(async () => {
                         const pairingKey = await this.functions.readData(this.keyFile);
-                        const key = pairingKey.length > 10 ? pairingKey.toString() : '0';
+                        const key = (pairingKey ?? '').length > 10 ? pairingKey.toString() : '0';
 
                         if (key !== '0') {
                             clearInterval(intervalId);

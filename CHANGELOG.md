@@ -15,6 +15,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - For plugin < v4.1.0 use Homebridge UI <= v5.5.0
 - For plugin >= v4.1.0 use Homebridge UI >= v5.13.0
 
+## [4.3.7] - (11.05.2026)
+
+## Changes
+
+- fix WebSocket message handler crash on malformed TV packet (unhandled JSON.parse exception)
+- fix pairing manifest mutation — PairingOld/PairingNew constants no longer modified across devices
+- fix potential null dereference in pairing key polling after key file removal
+- fix `const` declaration in switch case without block scope
+- remove dead `sensorPowerService` and `sensorPlayStateService` references (never assigned)
+- fix duplicate keys in DiacriticsMap for Spanish/French characters
+
 ## [4.3.6] - (08.05.2026)
 
 ## Changes

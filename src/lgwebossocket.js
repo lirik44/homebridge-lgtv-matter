@@ -141,9 +141,9 @@ class LgWebOsSocket extends EventEmitter {
 
     async registerToTv(PairingData) {
         try {
-            PairingData['client-key'] = this.pairingKey;
+            const data = { ...PairingData, 'client-key': this.pairingKey };
             this.registerId = await this.getCid();
-            await this.send('register', undefined, PairingData, this.registerId);
+            await this.send('register', undefined, data, this.registerId);
             return;
         } catch (err) {
             if (this.logError) this.emit('error', `Socket register error: ${err}`);
@@ -358,7 +358,13 @@ class LgWebOsSocket extends EventEmitter {
                     }
                 })
                 .on('message', async (message) => {
-                    const parsedMessage = JSON.parse(message);
+                    let parsedMessage;
+                    try {
+                        parsedMessage = JSON.parse(message);
+                    } catch (error) {
+                        if (this.logDebug) this.emit('debug', `Socket received malformed message: ${error}`);
+                        return;
+                    }
                     const messageId = parsedMessage.id;
                     const messageType = parsedMessage.type;
                     const messageData = parsedMessage.payload;
