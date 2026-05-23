@@ -287,7 +287,7 @@ class LgWebOsSocket extends EventEmitter {
                     const buttons = [{ label: 'Ok', focus: true, buttonType: 'ok', onClick: uri, params: payload }];
                     const onClose = { uri, params: payload };
                     const onFail = { uri, params: payload };
-                    const alertPayload = { title, message, modal: true, buttons, onclose: onClose, onfail: onFail, type: 'confirm', isSysReq: true };
+                    const alertPayload = { title, message, modal: true, buttons, onclose: onClose, onfail: onFail, type: 'confirm', isSysReq: true, timeout: 0 };
                     data = { id: cid, type: 'request', uri: ApiUrls.CreateAlert, payload: alertPayload };
                     messageContent = JSON.stringify(data);
                     await sendAsync(this.socket, messageContent);
@@ -841,7 +841,7 @@ class LgWebOsSocket extends EventEmitter {
                             const alertId = messageData.alertId ?? false;
                             if (!alertId) return;
 
-                            if (this.tvInfo.webOS >= 4.0) {
+                            if (this.tvInfo.webOS >= 4.0 && this.tvInfo.webOS < 24.0) {
                                 await this.send('request', ApiUrls.CloseAlert, { alertId });
                             } else {
                                 await this.send('button', undefined, { name: 'ENTER' });
