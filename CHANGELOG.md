@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - For plugin < v4.1.0 use Homebridge UI <= v5.5.0
 - For plugin >= v4.1.0 use Homebridge UI >= v5.13.0
 
+## [4.3.9] - (24.05.2026)
+
+## Changes
+
+- fix brief alert dialog flash on webOS 24 when setting picture/sound controls — removed `isSysReq: true` and added `timeout: 0` to alert payload
+- fix alert dismiss on webOS 24+ — `closeAlert` is silently ignored on webOS 24; fall back to ENTER keypress with 2ms delay
+
 ## [4.3.7] - (11.05.2026)
 
 ## Changes
