@@ -844,7 +844,7 @@ class LgWebOsSocket extends EventEmitter {
                             if (this.tvInfo.webOS >= 4.0 && this.tvInfo.webOS < 24.0) {
                                 await this.send('request', ApiUrls.CloseAlert, { alertId });
                             } else {
-                                await new Promise(resolve => setTimeout(resolve, 2));
+                                await new Promise(resolve => setTimeout(resolve, 20));
                                 await this.send('button', undefined, { name: 'ENTER' });
                             }
                             break;

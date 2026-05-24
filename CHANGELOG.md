@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - For plugin < v4.1.0 use Homebridge UI <= v5.5.0
 - For plugin >= v4.1.0 use Homebridge UI >= v5.13.0
 
+## [4.3.10] - (24.05.2026)
+
+## Changes
+
+- fix picture/sound control alert on webOS 24 — removed `isSysReq: true`, added `timeout: 0`; `closeAlert` is silently ignored on webOS 24 so dismiss falls back to ENTER keypress ~20ms after `alertId`
+- note: a brief dialog flash on webOS 24 is a known LG firmware limitation — the dialog renders before `timeout: 0` can suppress it; no user confirmation is required and the setting applies correctly
+
 ## [4.3.9] - (24.05.2026)
 
 ## Changes
