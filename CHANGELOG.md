@@ -15,6 +15,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - For plugin < v4.1.0 use Homebridge UI <= v5.5.0
 - For plugin >= v4.1.0 use Homebridge UI >= v5.13.0
 
+## [4.3.11] - (04.06.2026)
+
+## Changes
+
+- fix: RESTful / MQTT: after a power restart, when the TV or network took time to come back, the REST server returned `"This data is not available at this time."` for all endpoints and never recovered without a manual plugin restart; root cause: each retry attempt created a new Express server on the same port — the second and subsequent servers silently failed to bind (port already in use, no error handler), leaving `restFulConnected = false`, so all `update()` calls were skipped even after the device successfully reconnected; fixed by creating the RESTful and MQTT instances once before the retry loop so the port is bound a single time and survives all connect attempts; the `'set'` (POST/MQTT command) handler is attached once via an `activeDevice` reference that is updated to the current `LgWebOsDevice` instance only after a successful connect
+
 ## [4.3.10] - (24.05.2026)
 
 ## Changes

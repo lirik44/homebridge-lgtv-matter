@@ -2,6 +2,8 @@ import { join } from 'path';
 import { mkdirSync, existsSync, writeFileSync } from 'fs';
 import LgWebOsDevice from './src/lgwebosdevice.js';
 import ImpulseGenerator from './src/impulsegenerator.js';
+import RestFul from './src/restful.js';
+import Mqtt from './src/mqtt.js';
 import { PluginName, PlatformName } from './src/constants.js';
 
 class LgWebOsPlatform {
@@ -98,6 +100,81 @@ class LgWebOsPlatform {
 			return;
 		}
 
+		// Create RestFul and MQTT once — before the retry loop — so the port/connection
+		// is established a single time and survives across all connect attempts.
+		// The 'set' handler uses activeDevice so it always routes to the current instance.
+		let activeDevice = null;
+		let restFul1 = null;
+		let restFulConnected = false;
+		if (device.restFul?.enable) {
+			try {
+				await new Promise((resolve) => {
+					const timer = setTimeout(resolve, 5000);
+					restFul1 = new RestFul({
+						port: device.restFul.port || 3000,
+						logWarn: logLevel.warn,
+						logDebug: logLevel.debug,
+					})
+						.once('connected', (msg) => {
+							clearTimeout(timer);
+							restFulConnected = true;
+							if (logLevel.success) log.success(`Device: ${host} ${name}, ${msg}`);
+							resolve();
+						})
+						.on('set', async (key, value) => {
+							try {
+								if (activeDevice) await activeDevice.setOverExternalIntegration('RESTFul', key, value);
+							} catch (error) {
+								if (logLevel.warn) log.warn(`Device: ${host} ${name}, RESTFul set error: ${error.message ?? error}`);
+							}
+						})
+						.on('debug', (msg) => logLevel.debug && log.info(`Device: ${host} ${name}, debug: ${msg}`))
+						.on('warn', (msg) => logLevel.warn && log.warn(`Device: ${host} ${name}, ${msg}`))
+						.on('error', (msg) => logLevel.error && log.error(`Device: ${host} ${name}, ${msg}`));
+				});
+			} catch (error) {
+				if (logLevel.warn) log.warn(`Device: ${host} ${name}, RESTFul start error: ${error.message ?? error}`);
+			}
+		}
+
+		let mqtt1 = null;
+		let mqttConnected = false;
+		if (device.mqtt?.enable) {
+			try {
+				await new Promise((resolve) => {
+					const timer = setTimeout(resolve, 10000);
+					mqtt1 = new Mqtt({
+						host: device.mqtt.host,
+						port: device.mqtt.port || 1883,
+						clientId: device.mqtt.clientId ? `lg_${device.mqtt.clientId}_${Math.random().toString(16).slice(3)}` : `lg_${Math.random().toString(16).slice(3)}`,
+						prefix: device.mqtt.prefix ? `lg/${device.mqtt.prefix}/${name}` : `lg/${name}`,
+						user: device.mqtt.auth?.user,
+						passwd: device.mqtt.auth?.passwd,
+						logWarn: logLevel.warn,
+						logDebug: logLevel.debug,
+					})
+						.once('connected', (msg) => {
+							clearTimeout(timer);
+							mqttConnected = true;
+							if (logLevel.success) log.success(`Device: ${host} ${name}, ${msg}`);
+							resolve();
+						})
+						.on('set', async (key, value) => {
+							try {
+								if (activeDevice) await activeDevice.setOverExternalIntegration('MQTT', key, value);
+							} catch (error) {
+								if (logLevel.warn) log.warn(`Device: ${host} ${name}, MQTT set error: ${error.message ?? error}`);
+							}
+						})
+						.on('debug', (msg) => logLevel.debug && log.info(`Device: ${host} ${name}, debug: ${msg}`))
+						.on('warn', (msg) => logLevel.warn && log.warn(`Device: ${host} ${name}, ${msg}`))
+						.on('error', (msg) => logLevel.error && log.error(`Device: ${host} ${name}, ${msg}`));
+				});
+			} catch (error) {
+				if (logLevel.warn) log.warn(`Device: ${host} ${name}, MQTT start error: ${error.message ?? error}`);
+			}
+		}
+
 		// The startup impulse generator retries the full connect+discover cycle
 		// every 120 s until it succeeds, then hands off to the lgDevice
 		// impulse generator and stops itself.
@@ -109,7 +186,9 @@ class LgWebOsPlatform {
 					await this.startDevice(
 						device, name, host, files,
 						heartBeatInterval, logLevel,
-						log, api, impulseGenerator
+						log, api, impulseGenerator,
+						restFul1, restFulConnected, mqtt1, mqttConnected,
+						(d) => { activeDevice = d; }
 					);
 				} catch (error) {
 					if (logLevel.error) log.error(`Device: ${host} ${name}, Start impulse generator error: ${error.message ?? error}, trying again.`);
@@ -124,11 +203,12 @@ class LgWebOsPlatform {
 
 	// ── Connect and register accessory for one device ─────────────────────────
 
-	async startDevice(device, name, host, files, heartBeatInterval, logLevel, log, api, impulseGenerator) {
+	async startDevice(device, name, host, files, heartBeatInterval, logLevel, log, api, impulseGenerator, restFul1, restFulConnected, mqtt1, mqttConnected, onDeviceReady) {
 		const lgDevice = new LgWebOsDevice(
 			api, device,
 			files.key, files.devInfo, files.inputs, files.channels,
-			files.inputsNames, files.inputsVisibility
+			files.inputsNames, files.inputsVisibility,
+			restFul1, restFulConnected, mqtt1, mqttConnected
 		)
 			.on('devInfo', (info) => logLevel.devInfo && log.info(info))
 			.on('success', (msg) => logLevel.success && log.success(`Device: ${host} ${name}, ${msg}`))
@@ -140,6 +220,7 @@ class LgWebOsPlatform {
 		const accessory = await lgDevice.start();
 		if (!accessory) return;
 
+		onDeviceReady(lgDevice);
 		api.publishExternalAccessories(PluginName, [accessory]);
 		if (logLevel.success) log.success(`Device: ${host} ${name}, Published as external accessory.`);
 
