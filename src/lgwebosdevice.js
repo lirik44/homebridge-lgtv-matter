@@ -2,7 +2,7 @@ import EventEmitter from 'events';
 import WakeOnLan from './wol.js';
 import LgWebOsSocket from './lgwebossocket.js';
 import Functions from './functions.js';
-import { ApiUrls, SystemApps, PictureModes, SoundModes, SoundOutputs } from './constants.js';
+import { ApiUrls, SystemApps, PictureModes, SoundModes, SoundOutputs, PowerOnWaitAttempts } from './constants.js';
 let Accessory, Characteristic, Service, Categories, Encode, AccessoryUUID;
 
 class LgWebOsDevice extends EventEmitter {
@@ -486,7 +486,7 @@ class LgWebOsDevice extends EventEmitter {
                                     if (this.startInput) {
                                         (async () => {
                                             try {
-                                                for (let attempt = 0; attempt < 15; attempt++) {
+                                                for (let attempt = 0; attempt < PowerOnWaitAttempts; attempt++) {
                                                     await new Promise(resolve => setTimeout(resolve, 1000));
 
                                                     if (this.power) {
@@ -536,12 +536,12 @@ class LgWebOsDevice extends EventEmitter {
                                 if (this.logDebug) this.emit('debug', `Device is off, deferring input switch to '${activeIdentifier}'`);
 
                                 (async () => {
-                                    for (let attempt = 0; attempt < 20; attempt++) {
+                                    for (let attempt = 0; attempt < PowerOnWaitAttempts; attempt++) {
                                         await new Promise(resolve => setTimeout(resolve, 1000));
 
                                         if (this.power && !this.isBooting) {
                                             if (this.inputIdentifier !== activeIdentifier) {
-                                                if (this.logDebug) this.emit('debug', `Retrying channel switch (${attempt + 1}/20)`);
+                                                if (this.logDebug) this.emit('debug', `Retrying channel switch (${attempt + 1}/${PowerOnWaitAttempts})`);
                                                 await this.setInput(input);
                                             } else {
                                                 this.televisionService.updateCharacteristic(Characteristic.ActiveIdentifier, activeIdentifier);

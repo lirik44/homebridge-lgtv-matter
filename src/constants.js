@@ -1,6 +1,11 @@
 export const PlatformName = "LgWebOsTv";
 export const PluginName = "homebridge-lgwebos-tv";
 
+// Max seconds to wait for the TV to report power ON after Wake-on-LAN before
+// giving up on a deferred input switch. Some webOS 24 sets take ~38s to come
+// up, so this needs comfortable headroom above that.
+export const PowerOnWaitAttempts = 60;
+
 export const DefaultInputs = [
     {
         "name": "Live TV",

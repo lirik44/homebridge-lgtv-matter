@@ -15,6 +15,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/)
 - For plugin < v4.1.0 use Homebridge UI <= v5.5.0
 - For plugin >= v4.1.0 use Homebridge UI >= v5.13.0
 
+## [4.3.12] - (18.07.2026)
+
+## Changes
+
+- fix: switching input from HomeKit while the TV is powered off could silently fail to apply on TVs slow to wake — the deferred input-switch retry loop (`ActiveIdentifier` onSet, previously 20 attempts) and the `startInput` power-on retry loop (`Active` onSet, previously 15 attempts) each waited only 15-20s for the TV to report power ON after Wake-on-LAN; some webOS 24 sets take ~38s to come up, so both windows expired before the TV was reachable and the user saw "Failed to set channel after retries"; fixed by extending both loops to a shared 60s window (`PowerOnWaitAttempts` in `src/constants.js`)
+- bump dependencies
+
 ## [4.3.11] - (04.06.2026)
 
 ## Changes
