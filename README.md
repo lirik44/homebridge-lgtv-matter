@@ -1,233 +1,99 @@
+<h1 align="center">Homebridge LG webOS TV — Matter fork</h1>
+
 <p align="center">
-  <a href="https://github.com/grzegorz914/homebridge-lgwebos-tv"><img src="https://raw.githubusercontent.com/grzegorz914/homebridge-lgwebos-tv/main/graphics/lgwebos.png" width="540"></a>
+    <a href="https://www.npmjs.com/package/homebridge">
+        <img src="https://img.shields.io/badge/powered%20by-homebridge-blue" alt="powered by homebridge">
+    </a>
+    <a href="#how-it-talks-to-the-tv">
+        <img src="https://img.shields.io/badge/powered%20by-LG%20SSAP-blue" alt="powered by the LG SSAP protocol">
+    </a>
+    <a href="#the-tv-over-matter">
+        <img src="https://img.shields.io/badge/matter-power-brightgreen" alt="Matter: power">
+    </a>
+    <a href="LICENSE">
+        <img src="https://img.shields.io/badge/license-MIT-lightgrey" alt="license MIT">
+    </a>
 </p>
 
-<span align="center">
+---
 
-# Homebridge LG webOS TV
+This is a fork of [`grzegorz914/homebridge-lgwebos-tv`](https://github.com/grzegorz914/homebridge-lgwebos-tv),
+which does all the work of talking to an LG webOS television over its own SSAP protocol on the local
+network. Everything that plugin does, this one does.
 
-[![verified-by-homebridge](https://img.shields.io/badge/homebridge-verified-purple)](https://github.com/homebridge/homebridge/wiki/Verified-Plugins)
-[![npm](https://shields.io/npm/dt/homebridge-lgwebos-tv?color=purple)](https://www.npmjs.com/package/homebridge-lgwebos-tv)
-[![npm](https://shields.io/npm/v/homebridge-lgwebos-tv?color=purple)](https://www.npmjs.com/package/homebridge-lgwebos-tv)
-[![npm](https://img.shields.io/npm/v/homebridge-lgwebos-tv/beta.svg?style=flat-square)](https://www.npmjs.com/package/homebridge-lgwebos-tv)
-[![GitHub pull requests](https://img.shields.io/github/issues-pr/grzegorz914/homebridge-lgwebos-tv.svg)](https://github.com/grzegorz914/homebridge-lgwebos-tv/pulls)
-[![GitHub issues](https://img.shields.io/github/issues/grzegorz914/homebridge-lgwebos-tv.svg)](https://github.com/grzegorz914/homebridge-lgwebos-tv/issues)
+What the fork adds is **Matter**, so the same televisions reach Alexa, SmartThings and Aqara as well as
+Apple Home — and a single path for power, so the two ecosystems never disagree about whether a TV is on.
 
-<a href="https://buycoffee.to/grzegorz914" target="_blank"><img src="https://raw.githubusercontent.com/grzegorz914/homebridge-lgwebos-tv/main/graphics/buycoffee-button.png" style="width: 234px; height: 61px" alt="Supports My Work"></a> <a href="https://github.com/grzegorz914/homebridge-lgwebos-tv"><img src="https://raw.githubusercontent.com/grzegorz914/homebridge-lgwebos-tv/main/graphics/QR_buycoffee.png" width="61"></a>
+## The TV over Matter
 
-</span>
-
-## This fork
-
-This is a fork of [grzegorz914/homebridge-lgwebos-tv](https://github.com/grzegorz914/homebridge-lgwebos-tv)
-that publishes the same TVs over Matter as well as HomeKit, so they also reach Alexa, SmartThings
-and Aqara. Everything else is upstream's.
-
-Matter has a device type for a television, but no controller renders it - neither Apple Home nor
-the Aqara app know what to do with a media player, and an accessory they cannot render is one that
-does not appear. So each TV is published as the plain devices they all do render:
+Matter does define a television. No controller renders it: Apple Home and the Aqara app both ignore the
+media device types, and an accessory a controller cannot draw is one that does not appear at all. So what
+is published is what every controller does draw:
 
 | Accessory | What it is | When |
 | --- | --- | --- |
-| `<TV name>` | Power, as an outlet (or a light) | Always |
+| `<TV name>` | Power, as an outlet — or a light, if you prefer | Always |
 | `<TV name> <input>` | One switch per configured input, on while the TV is showing it | Unless `matter.inputs` is false |
 | `<TV name> Backlight` | A dimmer | When backlight control is enabled under Picture |
 
-It is on wherever the Homebridge bridge running this plugin has Matter enabled, and needs no
-configuration. `matter` in each device's config turns parts of it off; see the plugin settings in
-the Homebridge UI.
+Turning a TV on and off has one method that both HomeKit and Matter go through, and the TV announces every
+change — from HomeKit, from a controller, or from the remote on the sofa — so both sides hear it.
 
-HomeKit and Matter drive the same device object and hear about every change, whichever ecosystem
-made it - a TV switched to another input from Aqara shows that input in Apple Home, and the other
-way round.
+Matter is on wherever the Homebridge bridge running this plugin has Matter enabled; that is the real
+opt-in. `matter.enable: false` on a device leaves that one out, and `matter.switchStyle` chooses between an
+outlet and a light.
 
-## Package Requirements
+Two things keep the two ecosystems still, and both were learned the hard way:
 
-| Package | Installation | Role | Required |
-| --- | --- | --- | --- |
-| [Homebridge](https://github.com/homebridge/homebridge) | [Homebridge Wiki](https://github.com/homebridge/homebridge/wiki) | HomeKit Bridge | Required |
-| [Homebridge UI](https://github.com/homebridge/homebridge-config-ui-x) | [Homebridge UI Wiki](https://github.com/homebridge/homebridge-config-ui-x/wiki) | Homebridge User Interface | Recommended |
-| [LG webOS TV](https://www.npmjs.com/package/homebridge-lgwebos-tv) | [Plug-In Wiki](https://github.com/grzegorz914/homebridge-lgwebos-tv/wiki) | Homebridge Plug-In | Required |
+- A command asking for what the TV is already doing is ignored.
+- So is one arriving on the heels of this plugin's own report. Reporting a value makes a controller work
+  out the others and send them back, and those arrive looking exactly like somebody pressing something.
 
-## Warning
+## Installation
 
-* For plugin < v4.1.0 use Homebridge UI <= v5.5.0.
-* For plugin >= v4.1.0 use Homebridge UI >= v5.13.0.
+The package name is unchanged, so this installs over the upstream plugin and your existing configuration
+and HomeKit accessories carry on as they were:
 
-## Abut The Plugin
+```
+npm --prefix /var/lib/homebridge install github:lirik44/homebridge-lgtv-webos
+```
 
-* Support SSL Web Socket for newer TV, plugin config `Advanced Settings >> Device >> SSL WebSocket`
-* Power and Screen ON/OFF short press tile in HomeKit app.
-* Media control is possible after you go to the RC app (iPhone/iPad).
-* Speaker control with hardware buttons after you go to RC app (iPhone/iPad).
-* Legacy Volume and Mute control is possible throught extra `Lightbulb / Fan` (slider).
-* Inputs can be changed using Inputs selector in Home app, additionally with extra buttons.
-* Channels can be changed using Channels selector in Home app, additionally with extra buttons.
-* Brightness, Contrast, Backlight, Color, Picture Mode, Sound Mode and Sound Output can be changed using extra buttons.
-* Siri can be used for all functions, some times need to create legacy buttons/switches/sensors.
-* Automations can be used for all functions, some times need create legacy buttons/switches/sensors.
-* Support external integrations, [RESTFul](https://github.com/grzegorz914/homebridge-lgwebos-tv?tab=readme-ov-file#restful-integration), [MQTT](https://github.com/grzegorz914/homebridge-lgwebos-tv?tab=readme-ov-file#mqtt-integration).
-
-<p align="center">
-  <a href="https://github.com/grzegorz914/homebridge-lgwebos-tv"><img src="https://raw.githubusercontent.com/grzegorz914/homebridge-lgwebos-tv/main/graphics/homekit.png" width="382"></a>
-  <a href="https://github.com/grzegorz914/homebridge-lgwebos-tv"><img src="https://raw.githubusercontent.com/grzegorz914/homebridge-lgwebos-tv/main/graphics/inputs.png" width="135"></a> <a href="https://github.com/grzegorz914/homebridge-lgwebos-tv"><img src="https://raw.githubusercontent.com/grzegorz914/homebridge-lgwebos-tv/main/graphics/rc1.png" width="135"></a>
-  <a href="https://github.com/grzegorz914/homebridge-lgwebos-tv"><img src="https://raw.githubusercontent.com/grzegorz914/homebridge-lgwebos-tv/main/graphics/RC.png" width="135"></a>
-</p>
+Then enable Matter for the child bridge this plugin runs in, and add that bridge to your Matter app with
+the pairing code Homebridge logs at startup.
 
 ## Configuration
 
-* Please configure [LG Connect Apps](https://www.lg.com/au/support/product-help/CT20088015-1437132986635)
-* Run this plugin as a [Child Bridge](https://github.com/homebridge/homebridge/wiki/Child-Bridges) (Highly Recommended), this prevent crash Homebridge if plugin crashes.
-* Install and use [Homebridge UI](https://github.com/homebridge/homebridge-config-ui-x/wiki) to configure this plugin.
-* The `sample-config.json` can be edited and used as an alternative.
+Every option from the upstream plugin works as documented there. This fork adds one block per device:
 
-<p align="center">
-  <a href="https://github.com/grzegorz914/homebridge-lgwebos-tv"><img src="https://raw.githubusercontent.com/grzegorz914/homebridge-lgwebos-tv/main/graphics/ustawienia.png" width="840"></a>
-</p>
+```json
+{
+  "matter": {
+    "enable": true,
+    "switchStyle": "outlet",
+    "inputs": true,
+    "backlight": true,
+    "stateSyncSeconds": 60
+  }
+}
+```
 
-| Key | Description |
-| --- | --- |
-| `name` | Here set the accessory `Name` to be displayed in `Homebridge/HomeKit`. |
-| `host` | Here set the `Hsostname or Address IP` of TV. |
-| `mac` | Here set the `Mac Address` of TV. |
-| `displayType` | Accessory type to be displayed in Home app: `0 - None / Disabled`, `1 - Television` , `2 - TV Set Top Box`, `3 - TV Streaming Stick`, `4 - Audio Receiver`. |
-| `inputs{}` | Inputs object. |
-| `inputs.getFromDevice` | This enable load inputs and apps direct from device. |
-| `inputs.filterSystemApps` | This enable filter sysem apps, only if `getFromDevice` is `true`. |
-| `inputs.displayOrder` | Here select display order of the inputs list, `0 - None`, `1 - Ascending by Name`, `2 - Descending by Name`, `3 - Ascending by Reference`, `4 - Ascending by Reference`. |
-| `inputs.data[].name` | Here set `Name` which You want expose to the `Homebridge/HomeKit`. |
-| `inputs.data[].reference` | Here set `Reference`. |
-| `inputs.data[].mode` | Here select input mode, `0 - Input/App`, `1 - Live TV Channel`. |
-| `buttons[]` | Buttons array. |
-| `buttons[].displayType` | Here select display type in HomeKit app, possible `0 - None / Disabled`, `1 - Outlet`, `2 - Switch`.|
-| `buttons[].name` | Here set `Name` which You want expose to the `Homebridge/HomeKit`. |
-| `buttons[].mode` | Here select button mode, `0 - Input/App`, `1 - Live TV Channel`, `2 - Remote Control`. |
-| `buttons[].reference` | Here set `Reference`, only for `Input/App` or `Live TV Channel` mode, in other case leave empty. |
-| `buttons[].command` | Here select `Remote Control` command which will be assigned to the button. |
-| `buttons[].namePrefix` | Here enable the accessory name as a prefix for button name.|
-| `sensors[]` | Sensors array. |
-| `sensors[].displayType` | Here choose the sensor type to be exposed in HomeKit app, possible `0 - None / Disabled`, `1 - Motion Sensor`, `2 - Occupancy Sensor`, `3 - Contact Sensor`. |
-| `sensors[].mode` | Here choose the sensor mode, possible `0 - Input`, `1 - Power`, `2 - Volume`, `3 - Mute`, `4 - Sound Mode`, `5 - Sound Output`, `6 - Picture Mode`, `7 - Screen Off`, `8 - Screen Saver`, `9 - Pixel Refresh`, `10 - Play State`, `11 - Channel`. |
-| `sensors[].name` | Here set own sensor `Name` which You want expose to the `Homebridge/HomeKit`. |
-| `sensors[].reference` | Here set mode `Reference`, sensor fired on switch to this reference. |
-| `sensors[].pulse` | Here enable sensor pulse, sensor send pulse and fired on every value change of selected mode. |
-| `sensors[].namePrefix` | Here enable the accessory name as a prefix for sensor name. |
-| `sensors[].level` | Here set `Level` between `0-100`, sensor fired on this level. |
-| `picture{}` | Picture object. |
-| `picture.brightnessControl` | This enable possibility adjust the Brightness. |
-| `picture.backlightControl` | This enable possibility adjust the Backlight. |
-| `picture.contrastControl` | This enable possibility adjust the Contrast. |
-| `picture.colorControl` | This enable possibility adjust the Color. |
-| `picture.modes[]`| Picture modes array, webOS >= 4.0. |
-| `picture.modes[].displayType` | Here select display type in HomeKit app, possible `0 - None / Disabled`, `1 - Outlet`, `2 - Switch`.|
-| `picture.modes[].name` | Here set own `Name` which You want expose to the `Homebridge/HomeKit` for this sensor. |
-| `picture.modes[].reference` | Here select mode to be exposed in `Homebridge/HomeKit`. |
-| `picture.modes[].namePrefix` | Here enable the accessory name as a prefix for picture mode.|
-| `sound{}` | Sound object. |
-| `sound.modes{}` | Sound mode object. |
-| `sound.modes.data[]`| Sound modes array, webOS >= 6.0. |
-| `sound.modes.data[].displayType` | Here select display type in HomeKit app, possible `0 - None / Disabled`, `1 - Outlet`, `2 - Switch`.|
-| `sound.modes.data[].name` | Here set own `Name` which You want expose to the `Homebridge/HomeKit` for this sensor. |
-| `sound.modes.data[].reference` | Here select mode to be exposed in `Homebridge/HomeKit`. |
-| `sound.modes.data[].namePrefix` | Here enable the accessory name as a prefix for sound mode.|
-| `sound.outputs{}` | Sound output object. |
-| `sound.outputs.data[]`| Sound outputs array. |
-| `sound.outputs.data[].displayType` | Here select display type in HomeKit app, possible `0 - None / Disabled`, `1 - Outlet`, `2 - Switch`.|
-| `sound.outputs.data[].name` | Here set own `Name` which You want expose to the `Homebridge/HomeKit` for this sensor. |
-| `sound.outputs.data[].reference` | Here select output to be exposed in `Homebridge/HomeKit`. |
-| `sound.outputs.data[].namePrefix` | Here enable the accessory name as a prefix for sound output.|
-| `screen{}` | Screen object. |
-| `screen.turnOnOff` | This enable possibility turn the screen ON/OFF, webOS >= 4.0. |
-| `screen.saverOnOff` | This enable possibility turn the screen saver ON/OFF, webOS >= 4.0. |
-| `power{}` | Power object. |
-| `power.broadcastAddress` | Her set network `Broadcast Address`, only if You use VLANS in Your network configuration and Your router/switch support IP Directed Broadcast, default is `255.255.255.255`. |
-| `power.startInput` | This enable possibilty to set default Input/App after Power ON TV. |
-| `power.startInputReference` | Here set the default Input/App reference. |
-| `volume{}` | Volume object. |
-| `volume.displayType` | Here choice what a additional volume control mode You want to use `0 - None / Disabled`, `1 - Lightbulb`, `2 - Fan`, `3 - TV Speaker (only hardware buttons on R.C. app)`, `4 - TV Speaker / Lightbulb`, `5 - TV Speaker / Fan`. |
-| `volume.name` | Here set Your own volume control name or leave empty. |
-| `volume.namePrefix` | Here enable the accessory name as a prefix for volume control name. |
-| `sslWebSocket` | If enabled, SSL WebSocket will support TV with new firmware. |
-| `disableTvService` | This disable TV service and prevent display double services if TV already support HomeKit native. |
-| `infoButtonCommand` | Here select the function of `I` button in RC app. |
-| `heartBeatInterval` | Heart beat check when TV is off, default is 5 sec. |
-| `log{}` | Log object. |
-| `log.deviceInfo` | If enabled, log device info will be displayed by every connections device to the network. |
-| `log.success` | If enabled, success log will be displayed in console. |
-| `log.info` | If enabled, info log will be displayed in console. |
-| `log.warn` | If enabled, warn log will be displayed in console. |
-| `log.error` | If enabled, error log will be displayed in console. |
-| `log.debug` | If enabled, debug log will be displayed in console. |
-| `restFul{}` | RESTFul object. |
-| `restFul.enable` | If enabled, RESTful server will start automatically and respond to any path request. |
-| `restFul.port` | Here set the listening `Port` for RESTful server. |
-| `mqtt{}` | MQTT object. |
-| `mqtt.enable` | If enabled, MQTT Broker will start automatically and publish all awailable PV data. |
-| `mqtt.host` | Here set the `IP Address` or `Hostname` for MQTT Broker. |
-| `mqtt.port` | Here set the `Port` for MQTT Broker, default 1883. |
-| `mqtt.clientId` | Here optional set the `Client Id` of MQTT Broker. |
-| `mqtt.prefix` | Here set the `Prefix` for `Topic` or leave empty. |
-| `mqtt.auth{}` | MQTT authorization object. |
-| `mqtt.auth.enable` | Here enable authorization for MQTT Broker. |
-| `mqtt.auth.user` | Here set the MQTT Broker user. |
-| `mqtt.auth.passwd` | Here set the MQTT Broker password. |
-| `reference` | All can be found in `homebridge_directory/lgwebosTv`, `inputs_xxx` file. |
+## Development
 
-### RESTFul Integration
+```
+npm install
+npm test
+```
 
-* POST data as a JSON Object `{Power: true}`, content type must be `application/json`
-* Path `status` response all available paths.
-* References:
-  * Picture Mode - `cinema`, `eco`, `expert1`, `expert2`, `game`, `normal`, `photo`, `sports`, `technicolor`, `vivid`, `hdrEffect`, `hdrFilmMaker`, `hdrCinema`, `hdrCinemaBright`, `hdrStandard`, `hdrEffect`, `hdrGame`, `hdrVivid`, `hdrTechnicolor`, `hdrExternal`, `dolbyHdrCinema`, `dolbyHdrCinemaBright`, `dolbyHdrDarkAmazon`, `dolbyHdrStandard`, `dolbyHdrGame`, `dolbyHdrVivid`.
-  * Sound Mode - `aiSoundPlus`, `standard`, `movie`, `clearVoice`, `news`, `sport`, `music`, `game`.
-  * Sound Output - `tv_speaker`, `external_speaker`, `external_optical`, `external_arc`, `lineout`, `headphone`, `tv_external_speaker`, `tv_external_headphone`, `bt_soundbar`, `soundbar`.
+The tests cover the parts that can be checked without a television: what gets published, the scales, and
+the identities a bridged accessory carries. Aqara refuses a bridged device whose name runs past 32
+characters or whose serial number does, which is a quiet failure worth a test.
 
-| Method | URL | Path | Response | Type |
-| --- | --- | --- | --- | --- |
-| GET | `http//ip:port` | `powerstaste`, `systeminfo`, `softwareinfo`, `channels`, `apps`, `power`, `audio`, `currentapp`, `currentchannel`, `picturesettings`, `soundmode`, `soundoutput`, `externalinputlist`, `mediainfo`. | `{"state": Active}` | JSON object. |
+## Credits
 
-| Method | URL | Key | Value | Type | Description |
-| --- | --- | --- | --- | --- | --- |
-| POST | `http//ip:port` | `Power` | `true`, `false` | boolean | Power state. |
-|      | `http//ip:port` | `Input` | `input reference` | string | Set input. |
-|      | `http//ip:port` | `Channel` | `channel reference` | string | Set channel. |
-|      | `http//ip:port` | `Volume` | `100` | integer | Set volume. |
-|      | `http//ip:port` | `Mute` | `true`, `false` | boolean | Set mute. |
-|      | `http//ip:port` | `Brightness` | `100` | integer | Set brightness. |
-|      | `http//ip:port` | `Backlight` | `100` | integer | Set backlight. |
-|      | `http//ip:port` | `Contrast` | `100` | integer | Set contrast. |
-|      | `http//ip:port` | `Color` | `100` | integer | Set color. |
-|      | `http//ip:port` | `PictureMode` | `picture mode reference` | string | Set picture mode. |
-|      | `http//ip:port` | `SoundMode` | `sound mode reference` | string | Set sound mode. |
-|      | `http//ip:port` | `SoundOutput` | `sound output reference` | string | Set sound output. |
-|      | `http//ip:port` | `PlayState` | `play`, `pause` | string | Set media play state. |
-|      | `http//ip:port` | `RcControl` | `REWIND` | string | Send RC command. |
+- [grzegorz914/homebridge-lgwebos-tv](https://github.com/grzegorz914/homebridge-lgwebos-tv) — the plugin
+  this fork is based on, and everything that talks to the TV
+- [homebridge/homebridge](https://github.com/homebridge/homebridge) — Homebridge, and its Matter support
 
-### MQTT Integration
+## License
 
-* Subscribe data as a JSON Object `{Power: true}`
-* References:
-  * Picture Mode - `cinema`, `eco`, `expert1`, `expert2`, `game`, `normal`, `photo`, `sports`, `technicolor`, `vivid`, `hdrEffect`, `hdrFilmMaker`, `hdrCinema`, `hdrCinemaBright`, `hdrStandard`, `hdrEffect`, `hdrGame`, `hdrVivid`, `hdrTechnicolor`, `hdrExternal`, `dolbyHdrCinema`, `dolbyHdrCinemaBright`, `dolbyHdrDarkAmazon`, `dolbyHdrStandard`, `dolbyHdrGame`, `dolbyHdrVivid`.
-  * Sound Mode - `aiSoundPlus`, `standard`, `movie`, `clearVoice`, `news`, `sport`, `music`, `game`.
-  * Sound Output - `tv_speaker`, `external_speaker`, `external_optical`, `external_arc`, `lineout`, `headphone`, `tv_external_speaker`, `tv_external_headphone`, `bt_soundbar`, `soundbar`.
-
-| Method | Topic | Message | Type |
-| --- | --- | --- | --- |
-| Publish | `Power State`, `System Info`, `Software Info`, `Channels`, `Apps`, `Power`, `Audio`, `Current App`, `Current Channel`, `Picture Settings`, `Sound Mode`, `Sound Output`, `External Input List`, `Media Info` | `{"state": Active}` | JSON object. |
-
-| Method | Topic | Key | Value | Type | Description |
-| --- | --- | --- | --- | --- | --- |
-| Subscribe | `Set` | `Power` | `true`, `false` | boolean | Power state. |
-|           | `Set` | `Input` | `input reference` | string | Set input. |
-|           | `Set` | `Channel` | `channel reference` | string | Set channel. |
-|           | `Set` | `Volume` | `100` | integer | Set volume. |
-|           | `Set` | `Mute` | `true`, `false` | boolean | Set mute. |
-|           | `Set` | `Brightness` | `100` | integer | Set brightness. |
-|           | `Set` | `Backlight` | `100` | integer | Set backlight. |
-|           | `Set` | `Contrast` | `100` | integer | Set contrast. |
-|           | `Set` | `Color` | `100` | integer | Set color. |
-|           | `Set` | `PictureMode` | `picture mode reference` | string | Set picture mode. |
-|           | `Set` | `SoundMode` | `sound mode reference` | string | Set sound mode. |
-|           | `Set` | `SoundOutput` | `sound output reference` | string | Set sound output. |
-|           | `Set` | `PlayState` | `play`, `pause` | string | Set media play state. |
-|           | `Set` | `RcControl` | `REWIND` | string | Send RC command. |
+MIT, same as the upstream project.

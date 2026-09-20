@@ -8,13 +8,13 @@
   "maintainers": [
     "grzegorz914"
   ],
-  "homepage": "https://github.com/grzegorz914/homebridge-lgwebos-tv#readme",
+  "homepage": "https://github.com/lirik44/homebridge-lgtv-webos#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/grzegorz914/homebridge-lgwebos-tv.git"
+    "url": "git+https://github.com/lirik44/homebridge-lgtv-webos.git"
   },
   "bugs": {
-    "url": "https://github.com/grzegorz914/homebridge-lgwebos-tv/issues"
+    "url": "https://github.com/lirik44/homebridge-lgtv-webos/issues"
   },
   "type": "module",
   "exports": {
@@ -47,10 +47,6 @@
     "mqtt",
     "restful"
   ],
-  "funding": {
-    "type": "Buy Coffee To",
-    "url": "https://buycoffee.to/grzegorz914"
-  },
   "contributors": [],
   "scripts": {
     "test": "node --test"
